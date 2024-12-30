@@ -16,8 +16,8 @@ class AuthController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8|confirmed',
+                'email' => 'required|string|email|max:255',
+                'password' => 'required|string',
             ]);
 
             if ($validator->fails()) {
@@ -32,18 +32,17 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => 'member'
+                'role' => 'member',
+                'adresse' => $request->adresse,
+                "username" => $request->username
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User registered successfully',
-                'data' => [
-                    'user' => $user,
-                    'token' => $token
-                ]
+                'token' => 'User registered successfully',
+                'token' => $token
             ], 201);
 
         } catch (\Exception $e) {
@@ -82,12 +81,7 @@ class AuthController extends Controller
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Login successful',
-                'data' => [
-                    'user' => $user,
-                    'token' => $token
-                ]
+                'message' => $token,
             ], 200);
 
         } catch (\Exception $e) {
@@ -118,22 +112,10 @@ class AuthController extends Controller
         }
     }
 
-    public function getAuthUser(): JsonResponse
+    public function user()
     {
-        try {
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'user' => auth()->user()
-                ]
-            ], 200);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to get user information',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return Auth::user();
+
     }
-} 
+}

@@ -17,7 +17,7 @@ use App\Http\Controllers\StatsController;
 */
 
 // Public routes
-Route::post('register', [AuthController::class, 'register']);
+Route::post('registre', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 // Product routes (public)
@@ -25,11 +25,14 @@ Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
 Route::get('products/search', [ProductController::class, 'search']);
 
+
+Route::resource('category', "App\Http\Controllers\CategoryController");
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::post('logout', [AuthController::class, 'logout']);
-    Route::get('user', [AuthController::class, 'getAuthUser']);
+    Route::get('user', [AuthController::class, 'user']);
 
     // Cart routes
     Route::get('cart', [CartController::class, 'index']);
