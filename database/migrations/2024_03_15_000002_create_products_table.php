@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description');
-            $table->decimal('price', 10, 2);
+            $table->float('price', 10, 2);
             $table->integer('stock')->default(0);
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('image')->nullable();
@@ -25,4 +25,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('products');
     }
-}; 
+};
