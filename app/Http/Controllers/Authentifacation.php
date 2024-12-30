@@ -21,6 +21,7 @@ class Authentifacation extends Controller
             $file->move("profil", $fileName);
         }
 
+      if($request->password != null || $request->password != "" || !empty($request->password)){
         $user = new User();
         $user->name = $request->name;
         $user->username = $request->username;
@@ -29,6 +30,9 @@ class Authentifacation extends Controller
         $user->password= Hash::make($request->password);
         $user->image= $fileName;
         $user->save();
+      }else{
+        return response()->json(["error"=>"password empty"]);
+      }
 
         return response()->json([
             "message"=> "user added successfully"
@@ -65,7 +69,9 @@ class Authentifacation extends Controller
 
                 $user = Auth::user();
                 $user->tokens()->delete();
-                return response("logout success")->cookie("token", null, -1);
+                return response()->json([
+                    "message" => "logout success"
+                ])->cookie("token", null, -1);
 
             }catch(\Exception $e){
                 return response()->json(["error" => $e->getMessage()], 400);
