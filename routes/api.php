@@ -1,37 +1,78 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Authentifacation;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\StatsController;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
+// Public routes
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
 
-Route::resource('/panier', "App\Http\Controllers\PanierController");
-Route::resource('/commande', "App\Http\Controllers\CommandeController");
-Route::resource('/ligne', "App\Http\Controllers\LigneController");
-Route::resource('/paiment', "App\Http\Controllers\PaimentController");
-Route::resource('/blog', "App\Http\Controllers\BlogController");
-Route::resource('/livraison', "App\Http\Controllers\LivraisonController");
-Route::resource('/reclamation', "App\Http\Controllers\ReclamationController");
-Route::resource('/question', "App\Http\Controllers\QuestionController");
-Route::resource('/produit', "App\Http\Controllers\ProduitController");
+// Product routes (public)
+Route::get('products', [ProductController::class, 'index']);
+Route::get('products/{id}', [ProductController::class, 'show']);
+Route::get('products/search', [ProductController::class, 'search']);
 
-Route::post("/login", "App\Http\Controllers\Authentifacation@login");
-Route::post("/registre", "App\Http\Controllers\Authentifacation@register");
-Route::post("/logout", "App\Http\Controllers\Authentifacation@logout");
-Route::get("/afficher-count", "App\Http\Controllers\AffichProduitController@jibliyacounterdyalproduit");
+// Protected routes
+Route::middleware('auth:sanctum')->group(function () {
+    // Auth routes
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('user', [AuthController::class, 'getAuthUser']);
 
+    // Cart routes
+    Route::get('cart', [CartController::class, 'index']);
+    Route::post('cart/items', [CartController::class, 'addItem']);
+    Route::put('cart/items/{id}', [CartController::class, 'updateItem']);
+    Route::delete('cart/items/{id}', [CartController::class, 'removeItem']);
+    Route::delete('cart', [CartController::class, 'clear']);
 
+    // Payment routes
+    Route::post('payments/create', [PaymentController::class, 'createPayment']);
+    Route::post('payments/capture', [PaymentController::class, 'capturePayment']);
 
-Route::middleware("auth:sanctum")->group(function () {
-    Route::controller(Authentifacation::class)->group(function () {
-        Route::get('/user', "user");
-        Route::post("/logout", "logout");
+    // Delivery routes
+    Route::get('deliveries', [DeliveryController::class, 'index']);
+    Route::post('deliveries', [DeliveryController::class, 'store']);
+    Route::get('deliveries/{id}', [DeliveryController::class, 'show']);
+    Route::put('deliveries/{id}', [DeliveryController::class, 'update']);
+    Route::get('deliveries/search', [DeliveryController::class, 'search']);
+
+    // Review routes
+    Route::get('products/{productId}/reviews', [ReviewController::class, 'index']);
+    Route::post('reviews', [ReviewController::class, 'store']);
+    Route::put('reviews/{id}', [ReviewController::class, 'update']);
+    Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
+
+    // Admin routes
+    Route::middleware('admin')->group(function () {
+        // Product management
+        Route::post('products', [ProductController::class, 'store']);
+        Route::put('products/{id}', [ProductController::class, 'update']);
+        Route::delete('products/{id}', [ProductController::class, 'destroy']);
+
+        // User management
+        Route::get('users', [UserController::class, 'index']);
+        Route::post('users', [UserController::class, 'store']);
+        Route::get('users/{id}', [UserController::class, 'show']);
+        Route::put('users/{id}', [UserController::class, 'update']);
+        Route::delete('users/{id}', [UserController::class, 'destroy']);
+        Route::get('users/search', [UserController::class, 'search']);
+
+        // Statistics
+        Route::get('stats', [StatsController::class, 'index']);
     });
-
-
 });
-
-Route::resource('/produit', "App\Http\Controllers\ProduitController");
 
 
