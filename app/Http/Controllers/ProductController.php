@@ -14,12 +14,14 @@ class ProductController extends Controller
     public function index(): JsonResponse
     {
         try {
+
             $products = Product::with('category')->paginate(10);
-            
+
             return response()->json([
                 'status' => 'success',
                 'data' => $products
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -37,7 +39,7 @@ class ProductController extends Controller
                 'description' => 'required|string',
                 'price' => 'required|numeric|min:0',
                 'category_id' => 'required|exists:categories,id',
-                'stock' => 'required|integer|min:0',
+                'quantite' => 'required|integer|min:0',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
@@ -77,7 +79,7 @@ class ProductController extends Controller
     {
         try {
             $product = Product::with('category')->findOrFail($id);
-            
+
             return response()->json([
                 'status' => 'success',
                 'data' => $product
@@ -100,7 +102,7 @@ class ProductController extends Controller
                 'description' => 'sometimes|string',
                 'price' => 'sometimes|numeric|min:0',
                 'category_id' => 'sometimes|exists:categories,id',
-                'stock' => 'sometimes|integer|min:0',
+                'quantite' => 'sometimes|integer|min:0',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
             ]);
 
@@ -145,12 +147,12 @@ class ProductController extends Controller
     {
         try {
             $product = Product::findOrFail($id);
-            
+
             // Delete product image if exists
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
-            
+
             $product->delete();
 
             return response()->json([
@@ -238,4 +240,4 @@ class ProductController extends Controller
             ], 500);
         }
     }
-} 
+}

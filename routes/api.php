@@ -59,23 +59,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('reviews/{id}', [ReviewController::class, 'destroy']);
 
     // Admin routes
-    Route::middleware('admin')->group(function () {
-        // Product management
-        Route::post('products', [ProductController::class, 'store']);
-        Route::put('products/{id}', [ProductController::class, 'update']);
-        Route::delete('products/{id}', [ProductController::class, 'destroy']);
+           // Product management
+           Route::post('products', [ProductController::class, 'store']);
+           Route::put('products/{id}', [ProductController::class, 'update']);
+           Route::delete('products/{id}', [ProductController::class, 'destroy']);
 
-        // User management
-        Route::get('users', [UserController::class, 'index']);
-        Route::post('users', [UserController::class, 'store']);
-        Route::get('users/{id}', [UserController::class, 'show']);
-        Route::put('users/{id}', [UserController::class, 'update']);
-        Route::delete('users/{id}', [UserController::class, 'destroy']);
-        Route::get('users/search', [UserController::class, 'search']);
+           // User management
+           Route::get('users', [UserController::class, 'index']);
+           Route::post('users', [UserController::class, 'store']);
+           Route::get('users/{id}', [UserController::class, 'show']);
+           Route::put('users/{id}', [UserController::class, 'update']);
+           Route::delete('users/{id}', [UserController::class, 'destroy']);
+           Route::get('users/search', [UserController::class, 'search']);
 
-        // Statistics
-        Route::get('stats', [StatsController::class, 'index']);
-    });
+           // Statistics
+           Route::get('stats', [StatsController::class, 'index']);
 });
 
 
