@@ -26,7 +26,7 @@ class StatsController extends Controller
                     ->limit(3);
             }])->get();
 
-            $totalClients = User::where('roles', 'member')->count();
+            $totalClients = User::where('roles', 'client')->count();
             $totalUsers = User::count();
             $totalProducts = Product::count();
             $totalPayments = Order::where('payment_status', 'paid')->count();
