@@ -27,6 +27,9 @@ class StatsController extends Controller
             }])->get();
 
             $totalClients = User::where('role', 'member')->count();
+            $totalUsers = User::count();
+            $totalProducts = Product::count();
+            $totalPayments = Order::where('payment_status', 'paid')->count();
 
             $currentOrders = Order::whereIn('status', ['pending', 'processing'])->count();
 
@@ -34,6 +37,28 @@ class StatsController extends Controller
                 ->sum('total_amount');
 
             $totalReviews = Review::count();
+
+            // Get recent sales
+            $recentSales = Order::with(['user', 'items.product'])
+                ->where('status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(function ($order) {
+                    return [
+                        'order_id' => $order->id,
+                        'customer_name' => $order->user->name,
+                        'amount' => $order->total_amount,
+                        'date' => $order->created_at,
+                        'items' => $order->items->map(function ($item) {
+                            return [
+                                'product_name' => $item->product->name,
+                                'quantity' => $item->quantity,
+                                'price' => $item->price
+                            ];
+                        })
+                    ];
+                });
 
             return response()->json([
                 'status' => 'success',
@@ -51,9 +76,13 @@ class StatsController extends Controller
                         ];
                     }),
                     'total_clients' => $totalClients,
+                    'total_users' => $totalUsers,
+                    'total_products' => $totalProducts,
+                    'total_payments' => $totalPayments,
                     'current_orders' => $currentOrders,
                     'total_revenue' => $totalRevenue,
-                    'total_reviews' => $totalReviews
+                    'total_reviews' => $totalReviews,
+                    'recent_sales' => $recentSales
                 ]
             ], 200);
 
