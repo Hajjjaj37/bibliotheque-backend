@@ -14,7 +14,7 @@ class OrderController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $orders = Order::with(['items.product', 'delivery'])
+            $orders = Order::with(['items.product.category', 'delivery'])
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
 
