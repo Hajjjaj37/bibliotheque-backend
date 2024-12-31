@@ -148,7 +148,6 @@ class ProductController extends Controller
         try {
             $product = Product::findOrFail($id);
 
-            // Delete product image if exists
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
@@ -190,18 +189,15 @@ class ProductController extends Controller
 
             $query = Product::query();
 
-            // Search by name or description
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'LIKE', "%{$request->query}%")
                   ->orWhere('description', 'LIKE', "%{$request->query}%");
             });
 
-            // Filter by category
             if ($request->category) {
                 $query->where('category_id', $request->category);
             }
 
-            // Filter by price range
             if ($request->min_price) {
                 $query->where('price', '>=', $request->min_price);
             }
@@ -209,7 +205,6 @@ class ProductController extends Controller
                 $query->where('price', '<=', $request->max_price);
             }
 
-            // Sort results
             switch ($request->sort_by) {
                 case 'price_asc':
                     $query->orderBy('price', 'asc');

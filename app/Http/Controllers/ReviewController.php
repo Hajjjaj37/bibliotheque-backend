@@ -49,7 +49,6 @@ class ReviewController extends Controller
                 ], 422);
             }
 
-            // Check if user has already reviewed this product
             $existingReview = Review::where('user_id', Auth::id())
                 ->where('product_id', $request->product_id)
                 ->first();
@@ -68,7 +67,6 @@ class ReviewController extends Controller
                 'comment' => $request->comment
             ]);
 
-            // Update product average rating
             $product = Product::findOrFail($request->product_id);
             $avgRating = Review::where('product_id', $request->product_id)
                 ->avg('rating');
@@ -107,7 +105,6 @@ class ReviewController extends Controller
 
             $review = Review::findOrFail($id);
 
-            // Verify review belongs to authenticated user
             if ($review->user_id !== Auth::id()) {
                 return response()->json([
                     'status' => 'error',
@@ -117,7 +114,6 @@ class ReviewController extends Controller
 
             $review->update($request->all());
 
-            // Update product average rating
             $avgRating = Review::where('product_id', $review->product_id)
                 ->avg('rating');
             $review->product->update(['average_rating' => $avgRating]);
@@ -142,7 +138,6 @@ class ReviewController extends Controller
         try {
             $review = Review::findOrFail($id);
 
-            // Verify review belongs to authenticated user or user is admin
             if (!Auth::user()->isAdmin() && $review->user_id !== Auth::id()) {
                 return response()->json([
                     'status' => 'error',
@@ -152,7 +147,6 @@ class ReviewController extends Controller
 
             $review->delete();
 
-            // Update product average rating
             $avgRating = Review::where('product_id', $review->product_id)
                 ->avg('rating');
             $review->product->update(['average_rating' => $avgRating]);

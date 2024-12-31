@@ -17,7 +17,6 @@ class StatsController extends Controller
     public function index(): JsonResponse
     {
         try {
-            // Get best sellers for each category
             $bestSellers = Category::with(['products' => function ($query) {
                 $query->select('products.*')
                     ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
@@ -27,17 +26,13 @@ class StatsController extends Controller
                     ->limit(3);
             }])->get();
 
-            // Get total clients (excluding admin users)
             $totalClients = User::where('role', 'member')->count();
 
-            // Get total current orders (pending/processing orders)
             $currentOrders = Order::whereIn('status', ['pending', 'processing'])->count();
 
-            // Calculate total revenue from completed orders
             $totalRevenue = Order::where('status', 'completed')
                 ->sum('total_amount');
 
-            // Get total number of reviews
             $totalReviews = Review::count();
 
             return response()->json([
