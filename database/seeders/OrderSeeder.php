@@ -19,7 +19,7 @@ class OrderSeeder extends Seeder
         // Create 50 orders
         for ($i = 0; $i < 50; $i++) {
             $user = $users->random();
-            
+
             // Create order
             $order = Order::create([
                 'user_id' => $user->id,
@@ -36,7 +36,7 @@ class OrderSeeder extends Seeder
                 $product = $products->random();
                 $quantity = rand(1, 3);
                 $price = $product->price;
-                
+
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
@@ -46,11 +46,6 @@ class OrderSeeder extends Seeder
 
                 $total += $quantity * $price;
             }
-
-            // Update order total
-            $order->update([
-                'total_amount' => $total
-            ]);
         }
     }
 }

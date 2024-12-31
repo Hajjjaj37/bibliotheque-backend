@@ -15,9 +15,6 @@ class OrderController extends Controller
     {
         try {
             $orders = Order::with(['items.product', 'delivery'])
-                ->when(!Auth::user()->isAdmin(), function ($query) {
-                    return $query->where('user_id', Auth::id());
-                })
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
 
