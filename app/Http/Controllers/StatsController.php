@@ -18,10 +18,10 @@ class StatsController extends Controller
     {
         try {
             $bestSellers = Category::with(['products' => function ($query) {
-                $query->select('products.*')
+                $query->select('products.id', 'products.name', 'products.price', 'products.category_id')
                     ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
                     ->selectRaw('COUNT(order_items.id) as sales_count')
-                    ->groupBy('products.id')
+                    ->groupBy('products.id', 'products.name', 'products.price', 'products.category_id')
                     ->orderByRaw('COUNT(order_items.id) DESC')
                     ->limit(3);
             }])->get();
