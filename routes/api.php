@@ -9,7 +9,7 @@ use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
-
+use App\Http\Controllers\OrderController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -40,6 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('cart/items/{id}', [CartController::class, 'removeItem']);
     Route::delete('cart', [CartController::class, 'clear']);
+
+    // Order routes
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::get('orders/{id}', [OrderController::class, 'show']);
+    Route::put('orders/{id}', [OrderController::class, 'update']);
 
     // Payment routes
     Route::post('payments/create', [PaymentController::class, 'createPayment']);
