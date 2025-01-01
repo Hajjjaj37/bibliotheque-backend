@@ -115,7 +115,7 @@ class ProductController extends Controller
             }
 
             $product = Product::findOrFail($id);
-            $data = $request->all();
+            $data = $request->only(['name', 'description', 'price', 'category_id', 'quantite']);
 
             if ($request->hasFile('image')) {
                 // Delete old image if exists
