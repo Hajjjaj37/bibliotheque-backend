@@ -94,4 +94,55 @@ class StatsController extends Controller
             ], 500);
         }
     }
+
+    public function getChartsData(): JsonResponse
+    {
+        try {
+            $ordersByMonth = Order::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+                ->whereYear('created_at', date('Y'))
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+
+            $monthlyOrders = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $count = $ordersByMonth->where('month', $i)->first()?->count ?? 0;
+                $monthlyOrders[] = [
+                    'month' => date('F', mktime(0, 0, 0, $i, 1)),
+                    'count' => $count
+                ];
+            }
+
+            $totalClients = User::where('roles', 'client')->count();
+            $clientsWithOrders = User::where('roles', 'client')
+                ->whereHas('orders')
+                ->count();
+
+            $orderPercentage = $totalClients > 0 
+                ? round(($clientsWithOrders / $totalClients) * 100, 2)
+                : 0;
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'orders_chart' => [
+                        'labels' => collect($monthlyOrders)->pluck('month'),
+                        'data' => collect($monthlyOrders)->pluck('count')
+                    ],
+                    'client_stats' => [
+                        'total_clients' => $totalClients,
+                        'clients_with_orders' => $clientsWithOrders,
+                        'order_percentage' => $orderPercentage
+                    ]
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch chart data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
