@@ -239,19 +239,30 @@ class ProductController extends Controller
     public function filterByCategory(string $category): JsonResponse
     {
         try {
-            $product = Product::with('category')->findOrFail($category);
+            $products = Product::with('category')
+                ->whereHas('category', function($query) use ($category) {
+                    $query->where('name', $category);
+                })
+                ->paginate(10);
+
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No products found in this category'
+                ], 404);
+            }
 
             return response()->json([
                 'status' => 'success',
-                'data' => $product
+                'data' => $products
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found',
+                'status' => 'error', 
+                'message' => 'Failed to fetch products by category',
                 'error' => $e->getMessage()
-            ], 404);
+            ], 500);
         }
     }
 }
