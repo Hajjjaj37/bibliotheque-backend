@@ -38,13 +38,6 @@ class CategoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            if (!Auth::user()->isAdmin()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
-
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255|unique:categories',
                 'description' => 'required|string'
@@ -65,6 +58,8 @@ class CategoryController extends Controller
                 'message' => 'Category created successfully',
                 'data' => $category
             ], 201);
+
+
 
         } catch (\Exception $e) {
             return response()->json([
@@ -155,7 +150,7 @@ class CategoryController extends Controller
             }
 
             $category = Category::findOrFail($id);
-            
+
             // Check if category has products
             if ($category->products()->count() > 0) {
                 return response()->json([

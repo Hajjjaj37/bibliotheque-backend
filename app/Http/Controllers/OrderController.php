@@ -150,4 +150,9 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    public function destroy(String $id){
+        $order =  Order::destroy($id);
+        return $order;
+    }
 }

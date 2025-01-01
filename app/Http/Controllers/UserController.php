@@ -14,15 +14,8 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         try {
-            // Only admin can list all users
-            if (!Auth::user()->isAdmin()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
 
-            $users = User::paginate(10);
+            $users = User::all();
 
             return response()->json([
                 'status' => 'success',
@@ -260,4 +253,4 @@ class UserController extends Controller
             ], 500);
         }
     }
-} 
+}
