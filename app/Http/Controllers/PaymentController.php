@@ -139,4 +139,21 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
+    public function success(Request $request): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payment successful',
+            'data' => $request->all()
+        ], 200);
+    }
+
+    public function cancel(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'cancelled',
+            'message' => 'Payment was cancelled'
+        ], 200);
+    }
 } 

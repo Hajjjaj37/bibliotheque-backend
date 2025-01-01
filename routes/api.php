@@ -53,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payment routes
     Route::post('payments/create', [PaymentController::class, 'createPayment']);
     Route::post('payments/capture', [PaymentController::class, 'capturePayment']);
+    Route::get('payments/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('payments/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
 
     // Delivery routes
     Route::get('deliveries', [DeliveryController::class, 'index']);
