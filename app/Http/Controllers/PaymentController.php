@@ -18,17 +18,14 @@ class PaymentController extends Controller
 
     public function __construct()
     {
-        // Disable SSL verification for development
-        curl_setopt_array(curl_init(), [
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => false
-        ]);
-
+        // Set path to CA certificates
+        putenv('CURL_CA_BUNDLE=/tmp/cacert.pem');
+        
         $environment = new SandboxEnvironment(
             config('services.paypal.client_id'),
             config('services.paypal.client_secret')
         );
-        
+
         $this->client = new PayPalHttpClient($environment);
     }
 
