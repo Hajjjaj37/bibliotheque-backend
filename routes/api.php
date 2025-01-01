@@ -10,6 +10,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ReclamationController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -81,6 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
            // Statistics
            Route::get('stats', [StatsController::class, 'index']);
+
+    // Reclamation routes
+    Route::apiResource('reclamations', ReclamationController::class);
 });
 
 
