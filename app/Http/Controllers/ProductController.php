@@ -15,7 +15,7 @@ class ProductController extends Controller
     {
         try {
 
-            $products = Product::with('category')->paginate(10);
+            $products = Product::with('category')->paginate(6);
 
             return response()->json([
                 'status' => 'success',
@@ -233,6 +233,25 @@ class ProductController extends Controller
                 'message' => 'Search failed',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function filterByCategory(string $category): JsonResponse
+    {
+        try {
+            $product = Product::with('category')->findOrFail($category);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $product
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found',
+                'error' => $e->getMessage()
+            ], 404);
         }
     }
 }

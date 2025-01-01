@@ -43,18 +43,6 @@ class CartController extends Controller
     public function addItem(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'required|integer|min:1'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
 
             $product = Product::findOrFail($request->product_id);
 
@@ -76,7 +64,7 @@ class CartController extends Controller
             if ($cartItem) {
                 // Update quantity if product already exists
                 $newQuantity = $cartItem->quantity + $request->quantity;
-                
+
                 if ($newQuantity > $product->stock) {
                     return response()->json([
                         'status' => 'error',
@@ -125,7 +113,7 @@ class CartController extends Controller
             }
 
             $cartItem = CartItem::findOrFail($itemId);
-            
+
             // Verify cart belongs to authenticated user
             if ($cartItem->cart->user_id !== Auth::id()) {
                 return response()->json([
@@ -163,7 +151,7 @@ class CartController extends Controller
     {
         try {
             $cartItem = CartItem::findOrFail($itemId);
-            
+
             // Verify cart belongs to authenticated user
             if ($cartItem->cart->user_id !== Auth::id()) {
                 return response()->json([
@@ -192,7 +180,7 @@ class CartController extends Controller
     {
         try {
             $cart = Cart::where('user_id', Auth::id())->first();
-            
+
             if ($cart) {
                 $cart->items()->delete();
             }
@@ -210,4 +198,4 @@ class CartController extends Controller
             ], 500);
         }
     }
-} 
+}

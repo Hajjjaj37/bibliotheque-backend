@@ -25,6 +25,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
 Route::get('products/search', [ProductController::class, 'search']);
+Route::get('product/{category}', [ProductController::class, 'filterByCategory']);
 
 
 Route::resource('category', "App\Http\Controllers\CategoryController");
