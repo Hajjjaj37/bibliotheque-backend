@@ -23,6 +23,11 @@ class PaymentController extends Controller
             config('services.paypal.client_secret')
         );
         $this->client = new PayPalHttpClient($environment);
+        
+        // Fix for SSL certificate verification issue
+        $this->client->setHttpClient(new \GuzzleHttp\Client([
+            'verify' => false  // Disable SSL verification for development
+        ]));
     }
 
     public function createPayment(): JsonResponse
