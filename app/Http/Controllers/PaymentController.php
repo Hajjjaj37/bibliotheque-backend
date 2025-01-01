@@ -18,18 +18,18 @@ class PaymentController extends Controller
 
     public function __construct()
     {
+        // Disable SSL verification for development
+        curl_setopt_array(curl_init(), [
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
+
         $environment = new SandboxEnvironment(
             config('services.paypal.client_id'),
             config('services.paypal.client_secret')
         );
         
-        $options = [
-            'http.ConnectionTimeOut' => 30,
-            'mode' => 'sandbox',
-            'http.verify' => false // Disable SSL verification for development
-        ];
-        
-        $this->client = new PayPalHttpClient($environment, $options);
+        $this->client = new PayPalHttpClient($environment);
     }
 
     public function createPayment(): JsonResponse
