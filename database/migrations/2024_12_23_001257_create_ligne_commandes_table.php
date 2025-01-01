@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('produit_id')->references('id')->on('Produits')->ondelete('cascade');
             $table->integer('quantite');
             $table->float('soustotal');
+            $table->enum('etat', ['en_attente', 'en_cours', 'livre', 'annule'])->default('en_attente');
             $table->timestamps();
         });
     }
