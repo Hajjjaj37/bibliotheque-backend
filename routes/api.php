@@ -53,10 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 
     // Payment routes
-    Route::post('payments/create', [PaymentController::class, 'createPayment']);
+    Route::post('/payment', [PaymentController::class, 'process']);
     Route::post('payments/capture', [PaymentController::class, 'capturePayment']);
-    Route::get('payments/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('payments/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+
 
     // Delivery routes
     Route::get('deliveries', [DeliveryController::class, 'index']);

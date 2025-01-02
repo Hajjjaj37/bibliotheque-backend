@@ -14,150 +14,91 @@ use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 
 class PaymentController extends Controller
 {
-    private PayPalHttpClient $client;
-
-    public function __construct()
-    {
-        // Set path to CA certificates
-        putenv('CURL_CA_BUNDLE=/tmp/cacert.pem');
-        
-        $environment = new SandboxEnvironment(
-            config('services.paypal.client_id'),
-            config('services.paypal.client_secret')
-        );
-
-        $this->client = new PayPalHttpClient($environment);
-    }
-
-    public function createPayment(): JsonResponse
+    public function process(Request $request)
     {
         try {
-            $cart = Cart::with(['items.product'])
-                ->where('user_id', Auth::id())
-                ->firstOrFail();
+            $validated = $request->validate([
+                'user_id' => 'required|integer',
+                'success_url' => ['required', 'string', function($attribute, $value, $fail) {
+                    if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                        $fail('The success url must be a valid URL.');
+                    }
+                }]
+            ]);
 
-            if ($cart->items->isEmpty()) {
+            $cartItems = DB::select('
+                SELECT p.*, pa.user_id
+                FROM carts pa
+                JOIN products p ON pa.product_id = p.id
+                WHERE pa.user_id = ?',
+                [$request->user_id]
+            );
+
+            if (empty($cartItems)) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Cart is empty'
+                    'error' => 'Cart is empty'
                 ], 400);
             }
 
-            $total = $cart->items->sum(function ($item) {
-                return $item->quantity * $item->product->price;
-            });
 
-            $request = new OrdersCreateRequest();
-            $request->prefer('return=representation');
-            $request->body = [
-                'intent' => 'CAPTURE',
-                'purchase_units' => [[
-                    'amount' => [
-                        'currency_code' => 'USD',
-                        'value' => number_format($total, 2, '.', '')
-                    ]
+            $total = 0;
+            foreach($cartItems as $item) {
+                $total += $item->price;
+            }
+
+
+            Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+            $checkout_session = Session::create([
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'usd',
+                        'product_data' => [
+                            'name' => 'e-shop order'
+                        ],
+                        'unit_amount' => $total * 100,
+                    ],
+                    'quantity' => 1,
                 ]],
-                'application_context' => [
-                    'return_url' => route('payment.success'),
-                    'cancel_url' => route('payment.cancel')
-                ]
-            ];
+                'mode' => 'payment',
+                'success_url' => $request->success_url,
+                'cancel_url' => $request->success_url . '?canceled=true',
+            ]);
 
-            $response = $this->client->execute($request);
+            if ($checkout_session->url) {
 
-            return response()->json([
-                'status' => 'success',
-                'data' => [
-                    'paypal_order_id' => $response->result->id,
-                    'approval_url' => collect($response->result->links)
-                        ->firstWhere('rel', 'approve')->href
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create payment',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function capturePayment(Request $request): JsonResponse
-    {
-        try {
-            $paypalOrderId = $request->input('paypal_order_id');
-            $request = new OrdersCaptureRequest($paypalOrderId);
-            $response = $this->client->execute($request);
-
-            if ($response->result->status === 'COMPLETED') {
-                // Create order from cart
-                $cart = Cart::with(['items.product'])
-                    ->where('user_id', Auth::id())
-                    ->firstOrFail();
-
-                $order = Order::create([
-                    'user_id' => Auth::id(),
-                    'total_amount' => $cart->items->sum(function ($item) {
-                        return $item->quantity * $item->product->price;
-                    }),
-                    'status' => 'processing',
-                    'payment_id' => $paypalOrderId,
-                    'payment_status' => 'paid'
+                $commande_id = DB::table('orders')->insertGetId([
+                    'user_id' => $request->user_id,
+                    'total_amount' => $total,
+                    'status' => $request->status,
+                    'date_commande' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ]);
 
-                // Create order items and update stock
-                foreach ($cart->items as $item) {
-                    $order->items()->create([
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'price' => $item->product->price
+
+                foreach($cartItems as $item) {
+                    DB::table('ligne_commandes')->insert([
+                        'commande_id' => $commande_id,
+                        'product_id' => $item->id,
+                        'quantite' => $quantite,
+                        'sous_total' => $item->price,
+                        'etat' => 'attente',
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
-
-                    // Update product stock
-                    $item->product->decrement('stock', $item->quantity);
+                    DB::update('UPDATE products SET quantity = quantity - 1 WHERE id = ?', [$item->id]);
                 }
-
-                // Clear the cart
-                $cart->items()->delete();
-
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Payment completed successfully',
-                    'data' => [
-                        'order' => $order
-                    ]
-                ], 200);
+                DB::delete('DELETE FROM cartes WHERE user_id = ?', [$request->user_id]);
             }
 
             return response()->json([
-                'status' => 'error',
-                'message' => 'Payment failed'
-            ], 400);
+                'url' => $checkout_session->url
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to capture payment',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-
-    public function success(Request $request): JsonResponse
-    {
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Payment successful',
-            'data' => $request->all()
-        ], 200);
-    }
-
-    public function cancel(): JsonResponse
-    {
-        return response()->json([
-            'status' => 'cancelled',
-            'message' => 'Payment was cancelled'
-        ], 200);
-    }
-} 
+}
