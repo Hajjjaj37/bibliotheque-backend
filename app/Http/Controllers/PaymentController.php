@@ -7,6 +7,9 @@ use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Stripe\Stripe;
+use Stripe\Checkout\Session;
 use PayPalCheckoutSdk\Core\PayPalHttpClient;
 use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
@@ -26,26 +29,23 @@ class PaymentController extends Controller
                 }]
             ]);
 
-            $cartItems = DB::select('
-                SELECT p.*, pa.user_id
-                FROM carts pa
-                JOIN products p ON pa.product_id = p.id
-                WHERE pa.user_id = ?',
-                [$request->user_id]
-            );
+            // Get cart items with quantity
+            $cartItems = DB::table('carts as pa')
+                ->join('products as p', 'pa.product_id', '=', 'p.id')
+                ->select('p.*', 'pa.user_id', 'pa.quantity')
+                ->where('pa.user_id', $request->user_id)
+                ->get();
 
-            if (empty($cartItems)) {
+            if ($cartItems->isEmpty()) {
                 return response()->json([
                     'error' => 'Cart is empty'
                 ], 400);
             }
 
-
             $total = 0;
             foreach($cartItems as $item) {
-                $total += $item->price;
+                $total += $item->price * $item->quantity;
             }
-
 
             Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
             $checkout_session = Session::create([
@@ -65,30 +65,36 @@ class PaymentController extends Controller
             ]);
 
             if ($checkout_session->url) {
-
+                // Create order
                 $commande_id = DB::table('orders')->insertGetId([
                     'user_id' => $request->user_id,
                     'total_amount' => $total,
-                    'status' => $request->status,
+                    'status' => 'pending', // Default status
                     'date_commande' => now(),
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
 
-
+                // Create order items and update product quantities
                 foreach($cartItems as $item) {
                     DB::table('ligne_commandes')->insert([
                         'commande_id' => $commande_id,
                         'product_id' => $item->id,
-                        'quantite' => $quantite,
-                        'sous_total' => $item->price,
+                        'quantite' => $item->quantity,
+                        'sous_total' => $item->price * $item->quantity,
                         'etat' => 'attente',
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);
-                    DB::update('UPDATE products SET quantity = quantity - 1 WHERE id = ?', [$item->id]);
+                    
+                    // Update product quantity
+                    DB::table('products')
+                        ->where('id', $item->id)
+                        ->decrement('quantite', $item->quantity);
                 }
-                DB::delete('DELETE FROM cartes WHERE user_id = ?', [$request->user_id]);
+
+                // Clear the cart
+                DB::table('carts')->where('user_id', $request->user_id)->delete();
             }
 
             return response()->json([
