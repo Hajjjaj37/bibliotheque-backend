@@ -11,6 +11,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReclamationController;
+use App\Http\Controllers\CategoryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,6 +30,7 @@ Route::get('product/{category}', [ProductController::class, 'filterByCategory'])
 
 
 Route::resource('category', "App\Http\Controllers\CategoryController");
+
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

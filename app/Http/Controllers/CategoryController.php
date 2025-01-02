@@ -139,39 +139,33 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id): JsonResponse
-    {
-        try {
-            if (!Auth::user()->isAdmin()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
+    public function destroy($id)
+{
+    try {
+        // Récupérer l'entrée avec l'ID spécifié
+        $category = Category::find($id);
 
-            $category = Category::findOrFail($id);
-
-            // Check if category has products
-            if ($category->products()->count() > 0) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Cannot delete category with associated products'
-                ], 400);
-            }
-
-            $category->delete();
-
+        // Vérifier si l'entrée existe
+        if (!$category) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Category deleted successfully'
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to delete category',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Category not found.'
+            ], 404);
         }
+
+        // Supprimer l'entrée
+        $category->delete();
+
+        // Retourner une réponse de succès
+        return response()->json([
+            'message' => 'Category deleted successfully.'
+        ], 200);
+    } catch (\Exception $e) {
+        // En cas d'erreur, retourner une réponse appropriée
+        return response()->json([
+            'message' => 'An error occurred while deleting the category.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

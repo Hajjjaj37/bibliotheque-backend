@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -115,13 +116,15 @@ class ProductController extends Controller
             }
 
             $product = Product::findOrFail($id);
-            $data = $request->only(['name', 'description', 'price', 'category_id', 'quantite']);
+            $product->name = $request->input('name');
+            $data = $request->except('image'); // Handle image separately
 
             if ($request->hasFile('image')) {
-                // Delete old image if exists
+                // Delete old image if it exists
                 if ($product->image) {
                     Storage::disk('public')->delete($product->image);
                 }
+
                 $path = $request->file('image')->store('products', 'public');
                 $data['image'] = $path;
             }
@@ -129,19 +132,22 @@ class ProductController extends Controller
             $product->update($data);
 
             return response()->json([
+                'id' => $id,
                 'status' => 'success',
                 'message' => 'Product updated successfully',
-                'data' => $product
+                'data' => $product,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update product',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
+
 
     public function destroy(int $id): JsonResponse
     {
@@ -259,7 +265,7 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error', 
+                'status' => 'error',
                 'message' => 'Failed to fetch products by category',
                 'error' => $e->getMessage()
             ], 500);
