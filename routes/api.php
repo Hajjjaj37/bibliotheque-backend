@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payment routes
     Route::post('/payment', [PaymentController::class, 'process']);
     Route::post('payments/capture', [PaymentController::class, 'capturePayment']);
+    Route::post('/payment/success', [PaymentController::class, 'success']);
 
 
     // Delivery routes
