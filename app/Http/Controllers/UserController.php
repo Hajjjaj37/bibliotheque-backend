@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -106,7 +107,7 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function dd(Request $request, int $id): JsonResponse
     {
         try {
             $user = User::findOrFail($id);
@@ -120,10 +121,8 @@ class UserController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
-                'password' => 'sometimes|string|min:8',
-                'role' => 'sometimes|in:admin,member'
+
+                "image"=> 'string|nullable'
             ]);
 
             if ($validator->fails()) {
@@ -163,6 +162,39 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    public function update(Request $request, User $user)
+    {
+
+        $validated = $request->validate([
+            'image' => 'nullable|string',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8',
+            'role' => 'sometimes|in:admin,member',
+        ]);
+
+        // Process photo if provided
+        if (!empty($validated['image'])) {
+            $photoData = base64_decode($validated['image']);
+            $fileName = 'profile/' . uniqid() . '.jpg';
+            Storage::disk('public')->put($fileName, $photoData);
+
+            $validated['image'] = $fileName;
+        }
+
+        if (!empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        }
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'User mis à jour avec succès!',
+            'user' => $user,
+        ], 200);
+    }
+
 
     public function destroy(int $id): JsonResponse
     {

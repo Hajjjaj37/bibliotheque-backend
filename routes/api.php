@@ -53,10 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('orders/{id}', [OrderController::class, 'destroy']);
 
     // Payment routes
-    Route::post('/payment', [PaymentController::class, 'process']);
+    Route::post('payment', [PaymentController::class, 'process']);
     Route::post('payments/capture', [PaymentController::class, 'capturePayment']);
-    Route::post('/payment/success', [PaymentController::class, 'success']);
-
+    Route::post('payment/process', [PaymentController::class, 'process']);
+    Route::get('payment/success', [PaymentController::class, 'success']);
 
     // Delivery routes
     Route::get('deliveries', [DeliveryController::class, 'index']);
@@ -74,14 +74,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes
            // Product management
            Route::post('products', [ProductController::class, 'store']);
-           Route::put('products/{id}', [ProductController::class, 'update']);
+           Route::put('products/{products}', [ProductController::class, 'update']);
            Route::delete('products/{id}', [ProductController::class, 'destroy']);
 
            // User management
            Route::get('users', [UserController::class, 'index']);
            Route::post('users', [UserController::class, 'store']);
            Route::get('users/{id}', [UserController::class, 'show']);
-           Route::put('users/{id}', [UserController::class, 'update']);
+           Route::put('users/{user}', [UserController::class, 'update']);
            Route::delete('users/{id}', [UserController::class, 'destroy']);
            Route::get('users/search', [UserController::class, 'search']);
 

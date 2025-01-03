@@ -25,10 +25,10 @@ class PaymentController extends Controller
                 'success_url' => 'required|string'
             ]);
 
-            // Get cart items with quantity
+            // Get cart items with quantite
             $cartItems = DB::table('carts as pa')
                 ->join('products as p', 'pa.product_id', '=', 'p.id')
-                ->select('p.*', 'pa.user_id', 'pa.quantity')
+                ->select('p.*', 'pa.user_id', 'pa.quantite')
                 ->where('pa.user_id', $request->user_id)
                 ->get();
 
@@ -42,7 +42,7 @@ class PaymentController extends Controller
             $lineItems = [];
 
             foreach($cartItems as $item) {
-                $total += $item->price * $item->quantity;
+                $total += $item->price * $item->quantite;
                 $lineItems[] = [
                     'price_data' => [
                         'currency' => 'usd',
@@ -52,12 +52,13 @@ class PaymentController extends Controller
                         ],
                         'unit_amount' => (int)($item->price * 100), // Convert to cents
                     ],
-                    'quantity' => $item->quantity,
+                    'quantity' => $item->quantite,
                 ];
             }
 
             // Create Stripe Checkout Session
             $checkout_session = \Stripe\Checkout\Session::create([
+                'payment_method_types' => ['card'],
                 'line_items' => $lineItems,
                 'mode' => 'payment',
                 'success_url' => $request->success_url . '?session_id={CHECKOUT_SESSION_ID}',
@@ -65,37 +66,56 @@ class PaymentController extends Controller
             ]);
 
             if ($checkout_session->url) {
-                // Create order
-                $commande_id = DB::table('orders')->insertGetId([
-                    'user_id' => $request->user_id,
-                    'total_amount' => $total,
-                    'status' => 'pending',
-                    'date_commande' => now(),
-                    'stripe_session_id' => $checkout_session->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                DB::beginTransaction();
 
-                // Create order items and update product quantities
-                foreach($cartItems as $item) {
-                    DB::table('ligne_commandes')->insert([
-                        'commande_id' => $commande_id,
-                        'product_id' => $item->id,
-                        'quantite' => $item->quantity,
-                        'sous_total' => $item->price * $item->quantity,
-                        'etat' => 'pending',
+                try {
+                    // Create the order and get the order ID
+                    $commande_id = DB::table('orders')->insertGetId([
+                        'user_id' => $request->user_id,
+                        'total_amount' => $total,
+                        'status' => 'pending',
+                        'payment_id' => $checkout_session->id,
                         'created_at' => now(),
                         'updated_at' => now()
                     ]);
+
+                    // If order creation failed, return an error response
+                    if (!$commande_id) {
+                        return response()->json([
+                            'error' => 'Failed to create order'
+                        ], 500);
+                    }
+
+                    // Insert items into ligne_commandes
+                    foreach ($cartItems as $item) {
+                        DB::table('ligne_commandes')->insert([
+                            'commande_id' => $commande_id,
+                            'produit_id' => $item->id,
+                            'quantite' => $item->quantite,
+                            'soustotal' => $item->price * $item->quantite,
+                            'etat' => 'en_cours',
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
+
+                    // Commit the transaction
+                    DB::commit();
+
+                    // Clear the cart
+                    DB::table('carts')->where('user_id', $request->user_id)->delete();
+
+                    return response()->json([
+                        'url' => $checkout_session->url,
+                        'session_id' => $checkout_session->id
+                    ]);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return response()->json([
+                        'error' => $e->getMessage()
+                    ], 500);
                 }
 
-                // Clear the cart
-                DB::table('carts')->where('user_id', $request->user_id)->delete();
-
-                return response()->json([
-                    'url' => $checkout_session->url,
-                    'session_id' => $checkout_session->id
-                ]);
             }
 
             return response()->json([
@@ -113,7 +133,7 @@ class PaymentController extends Controller
     {
         try {
             $session_id = $request->get('session_id');
-            
+
             if (!$session_id) {
                 return response()->json([
                     'error' => 'No session ID provided'
@@ -122,7 +142,7 @@ class PaymentController extends Controller
 
             // Retrieve the session from Stripe
             $session = \Stripe\Checkout\Session::retrieve($session_id);
-            
+
             if ($session->payment_status === 'paid') {
                 // Update order status
                 DB::table('orders')

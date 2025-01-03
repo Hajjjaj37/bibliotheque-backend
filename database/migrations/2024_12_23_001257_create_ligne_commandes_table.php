@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('ligne_commandes', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('commande_id');
-            $table->foreign('commande_id')->references('id')->on('commandes')->ondelete('cascade');
+            $table->foreign('commande_id')->references('id')->on('orders')->ondelete('cascade');
             $table->unsignedBigInteger('produit_id');
-            $table->foreign('produit_id')->references('id')->on('Produits')->ondelete('cascade');
+            $table->foreign('produit_id')->references('id')->on('products')->ondelete('cascade');
             $table->integer('quantite');
             $table->float('soustotal');
             $table->enum('etat', ['en_attente', 'en_cours', 'livre', 'annule'])->default('en_attente');

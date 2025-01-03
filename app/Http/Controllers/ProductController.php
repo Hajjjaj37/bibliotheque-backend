@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
@@ -52,6 +53,22 @@ class ProductController extends Controller
                 ], 422);
             }
 
+            if (!empty($request['image'])) {
+                $photoData = base64_decode($request['image']);
+                $fileName = 'products/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($fileName, $photoData);
+
+                $product = new Product();
+                $product['image'] = $fileName;
+                $product['name'] = $request['name'];
+                $product['description'] = $request['description'];
+                $product['price'] = $request['price'];
+                $product['category_id'] = $request['category_id'];
+                $product['average_rating'] = $request['average_rating'];
+                $product->save();
+
+            }
+
             $data = $request->all();
 
             if ($request->hasFile('image')) {
@@ -95,29 +112,25 @@ class ProductController extends Controller
         }
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, Product $product)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|string|max:255',
-                'description' => 'sometimes|string',
-                'price' => 'sometimes|numeric|min:0',
-                'category_id' => 'sometimes|exists:categories,id',
-                'quantite' => 'sometimes|integer|min:0',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+
+            $validated = $request->validate([
+                'name' => 'nullable|string',
+                'description' => 'sometimes|string|max:255',
+                'price' => 'sometimes|numeric',
+                'category_id' => 'sometimes|numeric',
+                'quantite' => 'sometimes|numeric',
+                'image' => 'nullable|string',
             ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+            if (!empty($validated['image'])) {
+                $photoData = base64_decode($validated['image']);
+                $fileName = 'products/' . uniqid() . '.jpg';
+                Storage::disk('public')->put($fileName, $photoData);
+                $validated['image'] = $fileName;
             }
-
-            $product = Product::findOrFail($id);
-            $product->name = $request->input('name');
-            $data = $request->except('image'); // Handle image separately
 
             if ($request->hasFile('image')) {
                 // Delete old image if it exists
@@ -126,16 +139,15 @@ class ProductController extends Controller
                 }
 
                 $path = $request->file('image')->store('products', 'public');
-                $data['image'] = $path;
+                $validated['image'] = $path;
             }
 
-            $product->update($data);
+            $product->update($validated);
 
             return response()->json([
-                'id' => $id,
                 'status' => 'success',
                 'message' => 'Product updated successfully',
-                'data' => $product,
+                'product' => $product,
             ], 200);
 
         } catch (\Exception $e) {
@@ -145,6 +157,7 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+
     }
 
 

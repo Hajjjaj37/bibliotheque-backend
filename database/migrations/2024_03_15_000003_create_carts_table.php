@@ -11,7 +11,10 @@ return new class extends Migration
         Schema::create('carts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->timestamps();
+            // kteb m3ak col bhadi integer
+            $table->integer("quantite")->default("1");
         });
     }
 
@@ -19,4 +22,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('carts');
     }
-}; 
+};
